@@ -2,7 +2,8 @@
 module XLSX
   VERSION = "0.1.0"
 
-  # TODO: Put your code here
+  class Error < Exception
+  end
 end
 
 require "./xlsx/*"
