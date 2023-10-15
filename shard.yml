@@ -1,0 +1,9 @@
+name: xlsx
+version: 0.1.0
+
+authors:
+  - Erdian718 <erdian718@qq.com>
+
+crystal: '>= 1.10.0'
+
+license: MIT
