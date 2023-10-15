@@ -4,3 +4,5 @@ module XLSX
 
   # TODO: Put your code here
 end
+
+require "./xlsx/*"
