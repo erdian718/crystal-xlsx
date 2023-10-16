@@ -1,5 +1,3 @@
-require "compress/zip"
-
 class XLSX::Book
   @entries = {} of String => XLSX::Entry | Bytes
 
