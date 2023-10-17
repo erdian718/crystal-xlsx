@@ -30,9 +30,10 @@ class XLSX::Book
   end
 
   protected def init : self
-    @rels = Relationships.new(fetch("_rels/.rels"))
-    target = @rels.fetch(REL_OFFICE_DOCUMENT) { "xl/workbook.xml" }
-    @dir = Path.posix(target).parent
+    rels = Relationships.new(fetch("_rels/.rels"))
+    target = Path.posix(rels.fetch(REL_OFFICE_DOCUMENT) { "xl/workbook.xml" })
+    @dir = target.parent
+    @rels = Relationships.new(fetch(@dir.join("_rels", "#{target.basename}.rels")))
 
     workbook = XML.parse(IO::Memory.new(fetch(target)), XML_PARSER_OPTIONS).first_element_child
     raise Error.new("Invalid workbook entry") unless !workbook.nil? && workbook.name == "workbook"
@@ -51,14 +52,35 @@ class XLSX::Book
     self
   end
 
-  private def fetch(name)
-    entry = @entries[name]?
-    raise Error.new("Missing entry: #{name}") if entry.nil?
+  private def fetch(path)
+    entry = @entries[path.to_s]?
+    raise Error.new("Missing entry: #{path}") if entry.nil?
     entry
+  end
+
+  def sheet_size : Int
+    @sheets.size
   end
 
   def sheet_names : Array(String)
     @sheets.names
+  end
+
+  def [](index : Int) : Sheet
+    sheet(@sheets.sheet(index))
+  end
+
+  def [](name : String) : Sheet
+    sheet(@sheets.sheet(name))
+  end
+
+  private def sheet(sheet)
+    entry = fetch(@dir.join(@rels[sheet[:id]]))
+    if entry.is_a?(Sheet)
+      entry
+    else
+      Sheet.new(sheet[:name], entry)
+    end
   end
 
   private class Sheets
@@ -71,8 +93,23 @@ class XLSX::Book
       end
     end
 
+    def size : Int
+      @sheets.size
+    end
+
     def names : Array(String)
       @sheets.map { |sheet| sheet[:name] }
+    end
+
+    def sheet(index : Int)
+      @sheets[index]
+    end
+
+    def sheet(name : String)
+      @sheets.each do |sheet|
+        return sheet if sheet[:name] == name
+      end
+      raise Error.new("Sheet not found: #{name}")
     end
   end
 
