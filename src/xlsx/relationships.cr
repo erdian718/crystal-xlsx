@@ -7,8 +7,7 @@ class XLSX::Relationships
   def initialize(bytes : Bytes? = nil)
     return if bytes.nil?
 
-    document = XML.parse(IO::Memory.new(bytes), XML_PARSER_OPTIONS)
-    rels = document.first_element_child
+    rels = XML.parse(IO::Memory.new(bytes), XML_PARSER_OPTIONS).first_element_child
     raise Error.new("Invalid relationships entry") unless !rels.nil? && rels.name == "Relationships"
 
     rels.children.each do |rel|
