@@ -5,7 +5,7 @@ class XLSX::Book
   @dir = Path.posix
   @rels = Relationships.new
   @sheets = Sheets.new
-  @entries = {} of String => Bytes
+  @entries = {} of String => Bytes | Entry
 
   private def initialize(file : Compress::Zip::File)
     file.entries.each do |entry|
@@ -16,12 +16,12 @@ class XLSX::Book
       end
     end
 
-    rels = Relationships.new(fetch("_rels/.rels"))
+    rels = Relationships.new(fetch("_rels/.rels").as(Bytes))
     target = Path.posix(rels.fetch(REL_OFFICE_DOCUMENT) { "xl/workbook.xml" })
     @dir = target.parent
-    @rels = Relationships.new(fetch(@dir.join("_rels", "#{target.basename}.rels")))
+    @rels = Relationships.new(fetch(@dir.join("_rels", "#{target.basename}.rels")).as(Bytes))
 
-    workbook = XML.parse(IO::Memory.new(fetch(target)), XML_PARSER_OPTIONS).first_element_child
+    workbook = XML.parse(IO::Memory.new(fetch(target).as(Bytes)), XML_PARSER_OPTIONS).first_element_child
     raise Error.new("Invalid workbook entry") unless !workbook.nil? && workbook.name == "workbook"
 
     workbook.children.each do |node|
@@ -72,11 +72,12 @@ class XLSX::Book
   end
 
   private def sheet(sheet)
-    entry = fetch(@dir.join(@rels[sheet[:id]]))
-    if entry.is_a?(Sheet)
-      entry
+    target = @dir.join(@rels[sheet[:id]]).to_s
+    entry = fetch(target)
+    if entry.is_a?(Bytes)
+      @entries[target] = Sheet.new(sheet[:name], entry)
     else
-      Sheet.new(sheet[:name], entry)
+      entry.as(Sheet)
     end
   end
 

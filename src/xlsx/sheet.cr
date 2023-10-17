@@ -1,5 +1,5 @@
 # Represents the XLSX worksheet.
-class XLSX::Sheet
+class XLSX::Sheet < XLSX::Entry
   getter name : String
 
   @data = Data.new
