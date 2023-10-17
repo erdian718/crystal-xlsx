@@ -25,12 +25,12 @@ class XLSX::Sheet < XLSX::Entry
       # TODO
     end
 
-    def [](row_index : Int, col_index : Int) : Cell
+    def [](ridx : Int, cidx : Int) : Cell
       # TODO
       Cell.new
     end
 
-    def [](reference : String) : Cell
+    def [](ref : String) : Cell
       # TODO
       Cell.new
     end
