@@ -15,21 +15,7 @@ class XLSX::Book
         end
       end
     end
-  end
 
-  def self.new(io : IO, sync_close : Bool = false) : self
-    Compress::Zip::File.open(io, sync_close) do |file|
-      new(file).init
-    end
-  end
-
-  def self.new(filename : Path | String) : self
-    File.open(filename) do |file|
-      new(file)
-    end
-  end
-
-  protected def init : self
     rels = Relationships.new(fetch("_rels/.rels"))
     target = Path.posix(rels.fetch(REL_OFFICE_DOCUMENT) { "xl/workbook.xml" })
     @dir = target.parent
@@ -48,13 +34,24 @@ class XLSX::Book
         # TODO
       end
     end
-
-    self
   end
 
-  private def fetch(path)
-    entry = @entries[path.to_s]?
-    raise Error.new("Missing entry: #{path}") if entry.nil?
+  def self.new(io : IO, sync_close : Bool = false) : self
+    Compress::Zip::File.open(io, sync_close) do |file|
+      new(file)
+    end
+  end
+
+  def self.new(filename : Path | String) : self
+    Compress::Zip::File.open(filename) do |file|
+      new(file)
+    end
+  end
+
+  private macro fetch(path)
+    %path = {{path}}.to_s
+    entry = @entries[%path]?
+    raise Error.new("Missing entry: #{%path}") if entry.nil?
     entry
   end
 
