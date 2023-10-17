@@ -4,17 +4,17 @@
 class XLSX::Relationships
   @entries = {} of String => {type: String, target: String}
 
-  def initialize(bytes : Bytes)
-    reader = XML::Reader.new(IO::Memory.new(bytes), XML_PARSER_OPTIONS)
-    reader.next
-    raise Error.new("Invalid relationships data") unless reader.name == "Relationships"
-    return unless reader.read && reader.depth == 1
+  def initialize(bytes : Bytes? = nil)
+    return if bytes.nil?
 
-    loop do
-      if reader.name == "Relationship"
-        @entries[reader["Id"]] = {type: reader["Type"], target: reader["Target"]}
+    document = XML.parse(IO::Memory.new(bytes), XML_PARSER_OPTIONS)
+    rels = document.first_element_child
+    raise Error.new("Invalid relationships entry") unless !rels.nil? && rels.name == "Relationships"
+
+    rels.children.each do |rel|
+      if rel.name == "Relationship"
+        @entries[rel["Id"]] = {type: rel["Type"], target: rel["Target"]}
       end
-      break unless reader.next && reader.depth == 1
     end
   end
 
